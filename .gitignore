@@ -1,2 +1,6 @@
+chips/
+chips2/
 .venv*
 *.csv
+logs/
+media/
