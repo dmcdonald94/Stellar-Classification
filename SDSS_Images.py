@@ -93,18 +93,36 @@ def fit_2d_gaussian(chip_data, object, band, ax=None, reshape=True):
 
 from requests.exceptions import ConnectionError
 
-def get_imgs(df, last_idx, mod=0, n_para=1):
+def get_imgs(df, last_idx, mod=0, n_para=1, max_idx = 53457):
     try:
         # figure out which ones we want to make objects for
         idxs = np.arange(0,len(df),1)
         # idxs_to_generate = idxs
         idxs_to_generate = idxs[idxs%n_para == mod]
         
+        # data_dir = Path("G:/My Drive/MIDS/207/SDSS-Classification/chips")
         data_dir = Path("./chips")
+        print(data_dir)
+        print(f"{data_dir.exists() = }")
         contents = data_dir.glob("**/*.jpeg")
+        contents = [content for content in contents]
+            
+        
         generated_idxs = list(set([int(content.name.split('-')[0]) for content in contents]))
         idxs_to_generate = idxs_to_generate[~np.isin(idxs_to_generate, generated_idxs)]
-        
+        idxs_to_generate = idxs_to_generate[idxs_to_generate < max_idx]
+
+
+        # check that images for all bands have been generated
+        for gen_idx in generated_idxs:
+            for band in bands:
+                if not (data_dir / f"{gen_idx}-{band}.jpeg").exists():
+                    print(f"MISSING {gen_idx}-{band}.jpeg")
+                    idxs_to_generate = np.append(idxs_to_generate, gen_idx)
+                    break
+            
+            
+
         for obj_idx, row in df.iterrows():
             print(f"Testing {obj_idx = }")
             if obj_idx not in idxs_to_generate:
