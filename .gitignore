@@ -4,3 +4,4 @@ chips2/
 *.csv
 logs/
 media/
+*.pkl
