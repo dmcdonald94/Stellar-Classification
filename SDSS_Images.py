@@ -93,7 +93,7 @@ def fit_2d_gaussian(chip_data, object, band, ax=None, reshape=True):
 
 from requests.exceptions import ConnectionError
 
-def get_imgs(df, last_idx, mod=0, n_para=1, max_idx = 53457):
+def get_imgs(df, last_idx, mod=0, n_para=1, max_idx = 100_00):
     try:
         # figure out which ones we want to make objects for
         idxs = np.arange(0,len(df),1)
