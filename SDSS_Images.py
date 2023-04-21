@@ -93,7 +93,7 @@ def fit_2d_gaussian(chip_data, object, band, ax=None, reshape=True):
 
 from requests.exceptions import ConnectionError
 
-def get_imgs(df, last_idx, mod=0, n_para=1, max_idx = 100_00):
+def get_imgs(df, last_idx, mod=0, n_para=1, max_idx = 100_000):
     try:
         # figure out which ones we want to make objects for
         idxs = np.arange(0,len(df),1)
@@ -114,7 +114,9 @@ def get_imgs(df, last_idx, mod=0, n_para=1, max_idx = 100_00):
 
 
         # check that images for all bands have been generated
+        print("Checking for missing images...")
         for gen_idx in generated_idxs:
+            print(f"Testing {gen_idx = }", end='\r')
             for band in bands:
                 if not (data_dir / f"{gen_idx}-{band}.jpeg").exists():
                     print(f"MISSING {gen_idx}-{band}.jpeg")
@@ -152,49 +154,53 @@ def get_imgs(df, last_idx, mod=0, n_para=1, max_idx = 100_00):
 
             # LOOP OVER ALL IMAGES HERE
             img_data_buffer = [SDSS.get_images(matches=best_plate, band = band) for band in bands]
-            for idx, (img, band) in enumerate(zip(img_data_buffer,bands)):
-                
-                out_dir = Path("./chips")
-                out_dir = out_dir / band
-                header = img[0][0].header
-                wcs = WCS(header)
-                obj_pix_x, obj_pix_y = wcs.world_to_pixel(c)
+            try:
+                for idx, (img, band) in enumerate(zip(img_data_buffer,bands)):
+                    
+                    out_dir = Path("./chips")
+                    out_dir = out_dir / band
+                    header = img[0][0].header
+                    wcs = WCS(header)
+                    obj_pix_x, obj_pix_y = wcs.world_to_pixel(c)
 
-                chip_size = 50
-                slice_y_0, slice_y_1 = int(obj_pix_y-chip_size), int(obj_pix_y+chip_size)
-                slice_x_0, slice_x_1 = int(obj_pix_x-chip_size), int(obj_pix_x+chip_size)
-                # slice_y_0, slice_y_1 = 10, -10
-                # slice_x_0, slice_x_1 = 10, -10
-                
-                
-                img_data = img[0][0].data.copy()
+                    chip_size = 50
+                    slice_y_0, slice_y_1 = int(obj_pix_y-chip_size), int(obj_pix_y+chip_size)
+                    slice_x_0, slice_x_1 = int(obj_pix_x-chip_size), int(obj_pix_x+chip_size)
+                    # slice_y_0, slice_y_1 = 10, -10
+                    # slice_x_0, slice_x_1 = 10, -10
+                    
+                    
+                    img_data = img[0][0].data.copy()
 
-                # slice_y_0 and slice_x_0 cannot be negative
-                slice_y_0 = slice_y_0 if slice_y_0 > 0 else 0
-                slice_x_0 = slice_x_0 if slice_x_0 > 0 else 0
+                    # slice_y_0 and slice_x_0 cannot be negative
+                    slice_y_0 = slice_y_0 if slice_y_0 > 0 else 0
+                    slice_x_0 = slice_x_0 if slice_x_0 > 0 else 0
 
-                # slice_y_1 and slice_x_1 cannot be greater than the size of the respective dimension
-                slice_y_1 = slice_y_1 if slice_y_1 < img_data.shape[0] else img_data.shape[0]
-                slice_x_1 = slice_x_1 if slice_x_1 < img_data.shape[1] else img_data.shape[1]
+                    # slice_y_1 and slice_x_1 cannot be greater than the size of the respective dimension
+                    slice_y_1 = slice_y_1 if slice_y_1 < img_data.shape[0] else img_data.shape[0]
+                    slice_x_1 = slice_x_1 if slice_x_1 < img_data.shape[1] else img_data.shape[1]
 
 
-                # make initial large chip of the object we are interested in
-                chip_data = img_data[slice_y_0:slice_y_1, slice_x_0:slice_x_1]
-                center_chip_x, center_chip_y = chip_data.shape[1] / 2, chip_data.shape[0] / 2
+                    # make initial large chip of the object we are interested in
+                    chip_data = img_data[slice_y_0:slice_y_1, slice_x_0:slice_x_1]
+                    center_chip_x, center_chip_y = chip_data.shape[1] / 2, chip_data.shape[0] / 2
 
-                
-                # plotting
-                _, chip_data, ellipse = fit_2d_gaussian(chip_data, object, band, None, reshape=True)
+                    
+                    # plotting
+                    _, chip_data, ellipse = fit_2d_gaussian(chip_data, object, band, None, reshape=True)
 
-                interval = ZScaleInterval(max_iterations=10)
-                vmin, vmax = interval.get_limits(chip_data)
-                norm = ImageNormalize(vmin=vmin, vmax=vmax, stretch=SinhStretch(), clip=True)
-                chip_data = norm(chip_data)    
-                
-                im = Image.fromarray((chip_data*255).astype('uint8'))
-                im = im.convert("L")
-                # im.show()
-                im.save(f"./chips/{obj_idx}-{band}.jpeg")
+                    interval = ZScaleInterval(max_iterations=10)
+                    vmin, vmax = interval.get_limits(chip_data)
+                    norm = ImageNormalize(vmin=vmin, vmax=vmax, stretch=SinhStretch(), clip=True)
+                    chip_data = norm(chip_data)    
+                    
+                    im = Image.fromarray((chip_data*255).astype('uint8'))
+                    im = im.convert("L")
+                    # im.show()
+                    im.save(f"./chips/{obj_idx}-{band}.jpeg")
+            except Exception as e:
+                print(f"Unable to process image... {e}")
+                print(f"Skipping {obj_idx = } and")
                 
     except ConnectionAbortedError as e:
         print(e)
