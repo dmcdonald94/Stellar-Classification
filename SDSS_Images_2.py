@@ -1,5 +1,4 @@
 
-from memory_profiler import profile
 from astroquery.sdss import SDSS
 from astroquery.exceptions import TimeoutError as AQTimeoutError
 from urllib.error import URLError
@@ -12,19 +11,21 @@ from astropy.coordinates import Angle
 import astropy.units as u
 from astropy.wcs import WCS
 from astropy.stats import sigma_clipped_stats
-from astropy.visualization import MinMaxInterval, SqrtStretch, ImageNormalize, ZScaleInterval, LogStretch, LinearStretch, SinhStretch, AsinhStretch, make_lupton_rgb
-from photutils.segmentation import detect_sources, detect_threshold, SourceFinder, SourceCatalog
+from astropy.visualization import ImageNormalize, ZScaleInterval, SinhStretch 
+from photutils.segmentation import detect_sources, detect_threshold, SourceCatalog
 
-import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
 from scipy.optimize import curve_fit
 from PIL import Image
-from sklearn.preprocessing import MinMaxScaler
 
 import time
 
 from pathlib import Path
+
+
+
+
 
 
 def scale_img(img_data):

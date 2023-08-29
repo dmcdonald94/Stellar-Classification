@@ -5,3 +5,6 @@ chips2/
 logs/
 media/
 *.pkl
+data/
+.ipynb_checkpoints/*
+*.txt
